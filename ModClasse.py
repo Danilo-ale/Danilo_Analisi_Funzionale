@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 class CompTelefonica:
     def __init__(self,nome) :
@@ -11,6 +12,7 @@ class CompTelefonica:
         self.df=pd.read_csv("ESERCIZIO ANALISI FUNZIONALE\\dataset_clienti.csv")
     
     def stampa_csv(self):
+        self.df=round(self.df,2)
         print(f"Il file csv è:\n{self.df}")
 
     def stats(self):
@@ -33,15 +35,15 @@ class CompTelefonica:
     def gestisci_val_manc(self):
         self.righe_mancanti()
         if len(self.df_righe_mancanti)>0:
-            print("Opzioni:\n-->1. Riempire le righe mancanti con i valori medi delle altre righe\n--->2.Eliminare le righe")
+            print("Opzioni:\n-->1. Riempire le righe mancanti con i valori medi delle altre righe\n-->2.Eliminare le righe")
             while True:
                 scelta=input("Scelta: ")
                 if scelta =="1":
                     for index in self.df_righe_mancanti.index:  #l'index rappresenta l'id
                         col_mancanti = self.df_righe_mancanti.loc[index].isnull() #verifica quale colonna è mancante dal df delle righe mancanti. Asseghna un booleano ad ogni colonna (False= ok) (true=valore mancante) 
-                        print("ok", col_mancanti)      
+                        #print("ok", col_mancanti)      
                         col_mancanti = col_mancanti[col_mancanti].index.to_list()   #converte solo le colonne mancanti in una lista, cioè solo i valori true, andando a salvare il loro nome
-                        print("gist", col_mancanti)   
+                        #print("gist", col_mancanti)   
                         print(f"Riga: {index} Colonne mancanti: {col_mancanti}")
                         for col in col_mancanti:        #per ogni colonna della lista, la riempie con il valore medio dell"nintera colonna
                             self.df.fillna({col: self.df[col].mean()}, inplace=True)
@@ -92,14 +94,58 @@ class CompTelefonica:
         
         print(f"DataFrame aggiornato senza anomalie:\n{self.df}")
 
+    def aggiungi_costo_gb(self):
+        self.df["Costo_per_GB"]=self.df["Tariffa_Mensile"]/self.df["Dati_Consumati"]
+        print(f"Colonna Costo/GB aggiunta:\n{self.stampa_csv()}")
+
+    def eda(self):
+        self.converti_dati()
+        self.correlazione= self.df[['Età', 'Durata_Abbonamento', "Tariffa_Mensile", "Churn"]].corr()
+        self.correlazione["Churn"]=self.correlazione["Churn"].round().astype(int)
+        self.correlazione=round(self.correlazione,2)
+        print(f"Correlazione:\n{self.correlazione}")
+
+    def converti_dati(self):
+        self.df["Churn"]=self.df["Churn"].map(lambda x: 1 if x=="Sì" else 0)
+
+    def normalizzazione(self):
+        self.df_numerico = self.df.select_dtypes(include=[np.number])
+        for col in self.df_numerico:
+            if col=="ID_Cliente":
+                continue
+            nuova_col=col+"_norm"
+            self.df[nuova_col]=(self.df[col] - self.df[col].min()) / (self.df[col].max() - self.df[col].min())
+        print("Dataframe normalizzato:")
+        self.stampa_csv()
 
 #1 CARICAMENTO ED ESPLORAZIONE INIZIALE
 df=CompTelefonica("Tim")
 df.leggi_csv()
-df.stampa_csv()
+df.aggiungi_costo_gb()
+#df.stampa_csv()
 #df.stats()
 #df.df_info()
-#df.gestisci_val_manc()
+df.gestisci_val_manc()
 df.elimina_anomalie()
+df.eda()
+df.normalizzazione()
 
 
+def menu():
+    print("""\n---MENU'---
+1. Stampa Dataframe
+2. Aggiungi colonna costo/GB
+3. 
+
+
+
+
+
+
+
+
+
+
+
+
+""")
