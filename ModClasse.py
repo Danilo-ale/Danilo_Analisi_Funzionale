@@ -57,11 +57,39 @@ class CompTelefonica:
                     print("Scelta sbagliata")
 
     def elimina_anomalie(self):
-        self.df=self.df[self.df["Età"] > 0]
-        self.df=self.df[self.df["Durata_Abbonamento"] > 0]
-        self.df=self.df[self.df["Dati_Consumati"] > 0]
-        self.df=self.df[self.df["Servizio_Clienti_Contatti"] > 0]
-        self.df=self.df[self.df["Tariffa_Mensile"] > 0]
+        self.eta_neg=self.df[self.df["Età"]<0]
+        if len(self.eta_neg)>0:
+            self.df["Età"] = self.df["Età"].abs()
+            print("Alcune età negative sono state rese positive")  
+
+        self.abb=self.df[self.df["Durata_Abbonamento"]<0]
+        if len(self.abb)>0:
+            self.df["Durata_Abbonamento"]=self.df["Durata_Abbonamento"].abs()
+
+        self.dati=self.df[self.df["Dati_Consumati"]<0]
+        if len(self.dati)>0:
+            self.df=self.df["Dati_Consumati"].abs()
+
+        self.scc=self.df[self.df["Servizio_Clienti_Contatti"]<0]
+        if len(self.scc)>0:
+            self.df=self.df["Servizio_Clienti_Contatti"].abs()
+
+        self.tf=self.df[self.df["Tariffa_Mensile"]<0]
+        if len(self.tf)>0:
+            self.df=self.df["Tariffa_Mensile"].abs()
+        
+        stats=self.df.describe()
+        stats_cl=stats.loc[["75%"]]    #loc per selezionare la specifica riga del df "statistiche "che contiene il 75%
+        tar_mens=stats_cl["Tariffa_Mensile"]
+        self.tf=self.df[self.df["Tariffa_Mensile"]>(tar_mens.iloc[0]+15)]
+        if len(self.tf)>0:
+            print(f"75% Tariffe mensili: {tar_mens.iloc[0]}")
+            print(f"Righe anomale sulle tariffe:\n{self.tf}")
+            print("Riduzione automatica di 15 euro sulle tariffe.")
+            for index in self.tf.index:
+                self.df.at[index, "Tariffa_Mensile"]-=15
+                print("Riduzione effettuata")
+        
         print(f"DataFrame aggiornato senza anomalie:\n{self.df}")
 
 
@@ -72,6 +100,6 @@ df.stampa_csv()
 #df.stats()
 #df.df_info()
 #df.gestisci_val_manc()
-df.correggi_anomalie()
+df.elimina_anomalie()
 
 
